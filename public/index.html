@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/@pipedrive/app-extensions-sdk@0/dist/index.umd.js"></script>
+
+    <style>
+      /* Add your custom CSS styles here */
+      /* For example, you can style form elements using classes or IDs */
+      /* Example CSS for illustration purposes, you can modify as needed */
+
+      /* Fonts */
+      @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap");
+
+      /* Global Styles */
+      body {
+        font-family: "Roboto", sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f4f4f4;
+      }
+
+      /* Form Styles */
+      .custom-modal-content {
+        width: 600px;
+        background-color: #fff;
+
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        padding: 30px;
+      }
+
+      .form-block {
+        padding: 20px;
+        background-color: #f9f9f9; /* Paper-like background color */
+        border: 1px solid #d3d3d3; /* Paper-like border */
+        border-radius: 5px;
+      }
+
+      .form-label {
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+
+      .form-row {
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .form-column {
+        flex: 1;
+        margin-right: 10px;
+      }
+
+      /* Success Modal */
+      .success-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .success-content {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        text-align: center;
+      }
+
+      .success-modal p {
+        font-size: 18px;
+        margin-bottom: 10px;
+      }
+
+      .success-modal button {
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      /* Submit Button */
+      .form-block button[type="submit"] {
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      .form-block button[type="submit"]:hover {
+        background-color: #0056b3;
+      }
+      .grid-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-gap: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      let SDK;
+      function validateForm(formData) {
+        for (const key in formData) {
+          if (formData.hasOwnProperty(key)) {
+            const value = formData[key].trim();
+            if (!value) {
+              alert(`Please fill in the "${key}" field.`);
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+      async function initializeSDK() {
+        try {
+          // Create an instance of the SDK and initialize it
+          const id = "72d1f3ae-c7ab-4d29-ae3b-cdf17a0b592e";
+          const sdk = new AppExtensionsSDK("test");
+          await sdk.initialize({ size: { height: 650, width: 600 } });
+
+          return sdk;
+        } catch (error) {
+          console.error("Error initializing SDK:", error);
+        }
+      }
+
+      // Call the initializeSDK function to start the interaction
+      async function init() {
+        SDK = await initializeSDK();
+      }
+      init();
+      async function closeModal() {
+        await SDK.execute("close_modal");
+      }
+      // Function to send the form data to Pipedrive using the PUT method
+      function sendFormDataToPipedrive(formData) {
+        fetch("/update-pipedrive", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Data sent successfully:", data);
+
+            // Show the success modal
+            const successModal = document.querySelector(".success-modal");
+            successModal.style.display = "flex";
+            setTimeout(() => {
+              successModal.style.display = "none";
+            }, 10000);
+          })
+
+          .catch((error) => {
+            console.error("Error sending data:", error);
+          });
+      }
+      // Wait for the DOM to be fully loaded before executing JavaScript
+      document.addEventListener("DOMContentLoaded", () => {
+        // Event listener for form submission
+        document.querySelector("form").addEventListener("submit", (event) => {
+          event.preventDefault(); // Prevent form submission to avoid page reload
+          const formData = {}; // Object to store the form data
+
+          // Get input values and store them in the formData object
+          formData.name = document.querySelector("#name").value;
+          formData.surname = document.querySelector("#surname").value;
+          formData.phoneNumber = document.querySelector("#phoneNumber").value;
+          formData.email = document.querySelector("#email").value;
+          formData.jobType = document.querySelector("#jobType").value;
+          formData.jobName = document.querySelector("#jobName").value;
+          formData.number = document.querySelector("#number").value;
+          formData.street = document.querySelector("#street").value;
+          formData.postalCode = document.querySelector("#postalCode").value;
+          formData.state = document.querySelector("#state").value;
+          formData.date = document.querySelector("#date").value;
+          formData.startTime = document.querySelector("#startTime").value;
+          formData.endTime = document.querySelector("#endTime").value;
+          formData.additionalNote =
+            document.querySelector("#additionalNote").value;
+          const emailInput = document.querySelector("#email");
+          if (!emailInput.checkValidity()) {
+            alert("Please enter a valid email address.");
+            return;
+          }
+
+          const numberInput = document.querySelector("#number");
+          if (!numberInput.checkValidity()) {
+            alert("Please enter a valid number.");
+            return;
+          }
+          sendFormDataToPipedrive(formData);
+        });
+      });
+    </script>
+    <div class="custom-modal-content">
+      <form>
+        <div class="grid-container">
+          <!-- Client Details Block -->
+          <div class="form-block">
+            <div class="form-label">Client Details</div>
+            <div class="form-row">
+              <input
+                type="text"
+                class="form-input"
+                id="name"
+                placeholder="Name"
+                required
+              />
+              <input
+                type="text"
+                class="form-input"
+                id="surname"
+                placeholder="Surname"
+                required
+              />
+            </div>
+            <div class="form-row">
+              <input
+                type="tel"
+                class="form-input"
+                id="phoneNumber"
+                pattern="[0-9]+"
+                placeholder="Phone Number"
+                required
+              />
+            </div>
+            <div class="form-row">
+              <input
+                type="email"
+                class="form-input"
+                id="email"
+                placeholder="Email"
+                pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Job Type Block -->
+          <div class="form-block">
+            <div class="form-label">Job Type</div>
+            <input
+              type="text"
+              class="form-input"
+              id="jobType"
+              placeholder="Job Type"
+            />
+            <input
+              type="text"
+              class="form-input"
+              id="jobName"
+              placeholder="Job name"
+            />
+          </div>
+
+          <!-- Service Location Block -->
+          <div class="form-block">
+            <div class="form-label">Service Location</div>
+            <input
+              type="text"
+              class="form-input"
+              id="number"
+              placeholder="Number"
+            />
+            <input
+              type="text"
+              class="form-input"
+              id="street"
+              placeholder="Street"
+            />
+            <div class="form-row">
+              <input
+                type="text"
+                class="form-input"
+                id="postalCode"
+                placeholder="Postal code"
+              />
+              <input
+                type="text"
+                class="form-input"
+                id="state"
+                placeholder="State"
+              />
+            </div>
+          </div>
+
+          <!-- Scheduled Block -->
+          <div class="form-block">
+            <div class="form-label">Scheduled</div>
+            <input
+              type="date"
+              class="form-input"
+              id="date"
+              placeholder="Date"
+            />
+            <div class="form-row">
+              <input
+                type="time"
+                class="form-input"
+                id="startTime"
+                placeholder="Start Time"
+              />
+              <input
+                type="time"
+                class="form-input"
+                id="endTime"
+                placeholder="End Time"
+              />
+            </div>
+            <input
+              type="text"
+              class="form-input"
+              id="additionalNote"
+              placeholder="Additional Note"
+            />
+          </div>
+        </div>
+        <!-- Submit Button -->
+        <div class="form-block">
+          <button type="submit">Submit</button>
+        </div>
+      </form>
+    </div>
+    <div class="success-modal">
+      <div class="success-content">
+        <p>Data updated successfully!</p>
+        <button onclick="closeModal()">Close</button>
+      </div>
+    </div>
+  </body>
+</html>
